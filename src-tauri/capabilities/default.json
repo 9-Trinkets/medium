@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for Medium windows",
+  "windows": ["*"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "core:event:default",
+    "core:window:default",
+    "core:path:default"
+  ]
+}

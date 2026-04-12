@@ -1,0 +1,22 @@
+[ghost]
+name = "vita"
+description = "A bundled vita ghost imported from the Arks Digital dino pack."
+
+[provenance]
+source_type = "aseprite-pack"
+artist = "Arks"
+attribution = "@ArksDigital — https://arks.digital/"
+
+[sprite]
+enabled = true
+frame_width = 24
+frame_height = 24
+fps = 8
+scale = 4.0
+flip_horizontal = false
+initial_animation = "idle"
+
+[[sprite.animations]]
+file = "resources/animations/idle.png"
+name = "idle"
+intent = "Imported idle animation from an Aseprite-style source pack."
