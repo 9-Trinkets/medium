@@ -10,15 +10,6 @@ Medium is a local desktop runtime for ghost avatars. It combines a Tauri daemon,
 - an MCP bridge for agent control
 - ghost validation, preview, and import commands
 
-## Public repo status
-
-This repo is set up to be public-safe:
-
-- the repo ships one bundled default ghost: `vita`
-- raw third-party source packs are **not** committed
-- custom ghosts are expected to live in the local ghost library, not in the repo
-- ghost provenance can be recorded in `ghost.toml`
-
 ## Default ghost credit
 
 The bundled default ghost is **`vita`**.
@@ -40,15 +31,6 @@ flowchart LR
     Daemon --> Sprite[Ghost sprite window]
     Daemon --> Bubble[Speech bubble window]
     Daemon --> Config[ghost.toml + local config]
-```
-
-```mermaid
-flowchart TD
-    Source[Ghost source art] --> Import[medium ghosts import]
-    Import --> Folder[Local ghost folder]
-    Folder --> Validate[medium ghosts validate]
-    Folder --> Preview[medium ghosts preview]
-    Folder --> Runtime[medium daemon / medium mcp]
 ```
 
 ```mermaid
@@ -117,16 +99,6 @@ npm run redeploy:daemon
 5. starts the daemon again
 6. prints `medium status`
 
-## Important runtime note
-
-The running daemon uses the installed binary:
-
-```text
-~/.cargo/bin/medium
-```
-
-Changes in `src-tauri/` do not affect the live daemon until the binary is reinstalled. Use `npm run redeploy:daemon` after runtime or CLI changes.
-
 ## Config and local paths
 
 Medium commonly uses:
@@ -137,15 +109,6 @@ Medium commonly uses:
 - local ghost library: `~/.medium/ghosts`
 - Claude MCP config: `~/.claude/.mcp.json`
 
-Example config:
-
-```toml
-[ghosts]
-path = "/Users/you/.medium/ghosts"
-```
-
-Ghost scale lives in each ghost's `ghost.toml` under `[sprite]`. Global config only needs a custom `ghosts.path` when the ghost library is stored somewhere else.
-
 ## Ghost manifest
 
 Each ghost folder must contain `ghost.toml`.
@@ -155,7 +118,6 @@ The frontend and daemon use the manifest as the source of truth for:
 - frame size
 - FPS
 - scale
-- initial facing
 - animation list
 - initial animation
 - provenance metadata
@@ -193,17 +155,11 @@ intent = "Imported idle animation from an Aseprite-style source pack."
 
 - `ghost.toml` exists
 - the ghost path exists and is a directory
-- unknown manifest fields are rejected
 - `ghost.name` and `ghost.description` are non-empty
 - `provenance.source_type` is non-empty when provenance is present
-- optional provenance fields must not be blank when provided
 - `sprite.frame_width`, `sprite.frame_height`, and `sprite.fps` are greater than zero
 - `sprite.scale` defaults to `1.0` and must be greater than zero
-- `sprite.animations` is non-empty when sprites are enabled
 - `sprite.animations` includes `idle`
-- animation names are unique
-- animation file paths are relative and stay under `resources/animations/`
-- referenced files exist and use supported image extensions
 
 Example:
 
@@ -241,13 +197,6 @@ medium ghosts import aseprite ./dino-pack/aseprite/doux.ase \
 - sheet-only imports fall back to a single `idle` strip
 - raw `.ase` imports use the Aseprite CLI to export a temporary sheet plus metadata
 - when Aseprite tag metadata exists, Medium emits one animation strip per tag such as `idle`, `run`, or `jump`
-
-## Current limitations
-
-- `medium init` currently targets Claude MCP config only
-- raw `.ase` import depends on the **full** Aseprite CLI; the trial build cannot export sheets
-- sheet-only import does not infer named sequences unless metadata is available
-- only the Aseprite importer exists today, though the importer architecture is now structured for additional importers
 
 ## Key implementation files
 
