@@ -198,6 +198,24 @@ medium ghosts import aseprite ./dino-pack/aseprite/doux.ase \
 - raw `.ase` imports use the Aseprite CLI to export a temporary sheet plus metadata
 - when Aseprite tag metadata exists, Medium emits one animation strip per tag such as `idle`, `run`, or `jump`
 
+## Releases
+
+The public repo includes a GitHub Actions release workflow at:
+
+- `.github/workflows/release.yml`
+
+Release flow:
+
+1. sync the latest `medium/` snapshot to the public repo
+2. push a tag like `v0.1.0` to the public repo, or run the workflow manually with `release_tag`
+3. GitHub Actions builds Tauri binaries on macOS, Linux, and Windows
+4. the workflow creates a draft GitHub Release and uploads the build artifacts
+
+Notes:
+
+- the release workflow lives inside `medium/.github/workflows/` in the monorepo so it lands at the public repo root after sync
+- the public sync workflow in the monorepo publishes only the tracked `medium/` snapshot, so local asset folders do not leak into the public repo
+
 ## Key implementation files
 
 - `src/ghosts.ts` — frontend loader for bundled ghost manifests
