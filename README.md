@@ -215,6 +215,7 @@ Notes:
 
 - the release workflow lives inside `medium/.github/workflows/` in the monorepo so it lands at the public repo root after sync
 - the public sync workflow in the monorepo publishes only the tracked `medium/` snapshot, so local asset folders do not leak into the public repo
+- current release builds target macOS and Linux; Windows is not published yet because the runtime still depends on Unix socket IPC
 
 ## Key implementation files
 

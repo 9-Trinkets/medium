@@ -22,8 +22,6 @@ jobs:
             args: ""
           - platform: ubuntu-22.04
             args: ""
-          - platform: windows-latest
-            args: ""
     runs-on: ${{ matrix.platform }}
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.ref_name }}
