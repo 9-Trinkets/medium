@@ -82,7 +82,6 @@ impl GhostManager {
             }
             Command::Speak {
                 text,
-                personality: _,
                 voice,
             } => {
                 logging::info(format!(

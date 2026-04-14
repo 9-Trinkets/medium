@@ -53,9 +53,6 @@ struct SpeakArgs {
     /// Optional ghost name (uses default if omitted)
     #[serde(default)]
     ghost: Option<String>,
-    /// Whether to use personality rephrasing
-    #[serde(default)]
-    personality: Option<bool>,
     /// Whether voice output is enabled; false keeps the speech bubble without TTS
     #[serde(default)]
     voice: Option<bool>,
@@ -176,7 +173,6 @@ impl ServerHandler for MediumMcpServer {
                         ghost,
                         Command::Speak {
                             text: args.text,
-                            personality: args.personality,
                             voice: args.voice,
                         },
                     )
@@ -406,11 +402,9 @@ mod tests {
         match cmd.command {
             Command::Speak {
                 text,
-                personality,
                 voice,
             } => {
                 assert_eq!(text, "Quiet bubble only");
-                assert_eq!(personality, None);
                 assert_eq!(voice, Some(false));
             }
             _ => panic!("Expected Speak command"),

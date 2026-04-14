@@ -43,8 +43,6 @@ pub enum Command {
     Speak {
         text: String,
         #[serde(default)]
-        personality: Option<bool>,
-        #[serde(default)]
         voice: Option<bool>,
     },
     Idle,

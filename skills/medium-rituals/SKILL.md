@@ -151,7 +151,7 @@ speak("Done.", ghost="vita", voice=False)
 - `dismiss(name)`
 - `play_animation(name, loop_anim=False, ghost=None)`
 - `set_facing(direction, ghost=None)`
-- `speak(text, ghost=None, personality=None, voice=None)`
+- `speak(text, ghost=None, voice=None)`
 
 ## Additional resources
 
