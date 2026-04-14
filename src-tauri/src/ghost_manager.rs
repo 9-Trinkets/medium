@@ -447,8 +447,8 @@ fn title_case(name: &str) -> String {
 fn ghost_layout(index: usize) -> (f64, f64) {
     let column = (index % 2) as f64;
     let row = (index / 2) as f64;
-    let x = 100.0 + (column * 500.0);
-    let y = 100.0 + (row * 400.0);
+    let x = 600.0 + (column * 350.0);
+    let y = 400.0 + (row * 400.0);
     (x, y)
 }
 
