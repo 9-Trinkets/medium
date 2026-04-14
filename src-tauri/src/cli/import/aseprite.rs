@@ -167,7 +167,6 @@ impl GhostImporter for AsepriteImporter {
                 flip_horizontal: false,
                 animations,
                 initial_animation,
-                balloon_offset_y: None,
             },
         };
 

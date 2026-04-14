@@ -55,8 +55,6 @@ pub struct SpriteSection {
     pub flip_horizontal: bool,
     pub animations: Vec<AnimationConfig>,
     pub initial_animation: Option<String>,
-    #[serde(default)]
-    pub balloon_offset_y: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

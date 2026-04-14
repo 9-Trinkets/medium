@@ -96,21 +96,7 @@ fn sync_bubble(ghost_name: String, main_x: i32, main_y: i32, app_handle: tauri::
         if let Some(main_win) = app_handle.get_webview_window(&sprite_label) {
             if let (Ok(main_size), Ok(bubble_size)) = (main_win.outer_size(), bubble.outer_size()) {
                 let offset_x = (main_size.width as i32 - bubble_size.width as i32) / 2;
-
-                // Try to load the ghost manifest to get the balloon offset
-                let mut balloon_offset = 0i32;
-                if let Ok(ghosts_dir) = config::ghosts_dir() {
-                    let ghost_path = ghosts_dir.join(&ghost_name);
-                    if let Ok(manifest) = manifest::GhostManifest::load_and_validate(&ghost_path) {
-                        if let Some(offset) = manifest.sprite.balloon_offset_y {
-                            balloon_offset = offset;
-                        }
-                    }
-                }
-
-                let target_y = main_y - bubble_size.height as i32
-                    + balloon_offset
-                    + DEFAULT_BUBBLE_VERTICAL_OFFSET;
+                let target_y = main_y - bubble_size.height as i32 + DEFAULT_BUBBLE_VERTICAL_OFFSET;
 
                 let _ = bubble.set_position(tauri::PhysicalPosition {
                     x: main_x + offset_x,
