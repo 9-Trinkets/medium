@@ -222,6 +222,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Initialize bubble position as soon as possible
   if (isSpriteWindow) {
       setTimeout(syncBubblePosition, 500); // Small delay to let windows spawn
+      window.setInterval(() => {
+        void syncBubblePosition();
+      }, 75);
   }
 
   async function syncBubblePosition() {
@@ -311,9 +314,6 @@ window.addEventListener('DOMContentLoaded', async () => {
             case 'speak':
             case 'bubble':
               showBubble(cmd.text);
-              if (cmd.type === 'speak') {
-                engine?.loadAnimation('idle', true);
-              }
               break;
             case 'set_facing':
               if (engine) {

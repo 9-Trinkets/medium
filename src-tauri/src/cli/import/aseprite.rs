@@ -6,11 +6,11 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command as StdCommand;
-use tempfile::TempDir;
 use tauri_app_lib::config;
 use tauri_app_lib::manifest::{
     AnimationConfig, GhostManifest, GhostSection, ProvenanceSection, SpriteSection,
 };
+use tempfile::TempDir;
 
 const SUPPORTED_SOURCE_EXTENSIONS: &[&str] = &["png", "gif", "webp", "jpg", "jpeg"];
 const ASEPRITE_SOURCE_EXTENSIONS: &[&str] = &["ase", "aseprite"];
@@ -70,7 +70,10 @@ impl AsepriteImporter {
 
 impl GhostImporter for AsepriteImporter {
     fn run(&self) -> Result<()> {
-        anyhow::ensure!(!self.args.name.trim().is_empty(), "Ghost name must not be empty.");
+        anyhow::ensure!(
+            !self.args.name.trim().is_empty(),
+            "Ghost name must not be empty."
+        );
         anyhow::ensure!(
             self.args.frame_width > 0,
             "--frame-width must be greater than 0."
@@ -92,7 +95,10 @@ impl GhostImporter for AsepriteImporter {
         let target_path = resolve_target_path(&self.args.name, self.args.path.as_deref())?;
 
         if target_path.exists() {
-            anyhow::bail!("Target ghost path already exists: {}", target_path.display());
+            anyhow::bail!(
+                "Target ghost path already exists: {}",
+                target_path.display()
+            );
         }
 
         let animations_dir = target_path.join("resources").join("animations");
@@ -161,6 +167,7 @@ impl GhostImporter for AsepriteImporter {
                 flip_horizontal: false,
                 animations,
                 initial_animation,
+                balloon_offset_y: None,
             },
         };
 
@@ -180,7 +187,10 @@ impl GhostImporter for AsepriteImporter {
         } else if !aseprite_cli_available() {
             println!("  Note: Aseprite CLI not found; imported from exported sheet assets.");
         }
-        println!("  Next step: medium ghosts preview {}", target_path.display());
+        println!(
+            "  Next step: medium ghosts preview {}",
+            target_path.display()
+        );
 
         Ok(())
     }
@@ -192,8 +202,12 @@ fn resolve_target_path(name: &str, output_path: Option<&str>) -> Result<PathBuf>
     }
 
     let ghosts_dir = config::ghosts_dir()?;
-    fs::create_dir_all(&ghosts_dir)
-        .with_context(|| format!("Failed to create ghosts directory: {}", ghosts_dir.display()))?;
+    fs::create_dir_all(&ghosts_dir).with_context(|| {
+        format!(
+            "Failed to create ghosts directory: {}",
+            ghosts_dir.display()
+        )
+    })?;
     Ok(ghosts_dir.join(name))
 }
 
@@ -257,7 +271,12 @@ fn resolve_import_sheet(source_path: &Path, sheet: Option<&str>) -> Result<Resol
         many => {
             let listed = many
                 .iter()
-                .map(|path| path.file_name().unwrap_or_default().to_string_lossy().to_string())
+                .map(|path| {
+                    path.file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .to_string()
+                })
                 .collect::<Vec<_>>()
                 .join(", ");
             anyhow::bail!(
@@ -275,9 +294,9 @@ fn discover_sheet_candidates(source_path: &Path) -> Result<Vec<PathBuf>> {
         if !base.exists() || !base.is_dir() {
             continue;
         }
-        for entry in fs::read_dir(&base)
-            .with_context(|| format!("Failed to read import source directory: {}", base.display()))?
-        {
+        for entry in fs::read_dir(&base).with_context(|| {
+            format!("Failed to read import source directory: {}", base.display())
+        })? {
             let entry = entry?;
             let path = entry.path();
             if !path.is_file() {
@@ -306,7 +325,9 @@ fn resolve_source_file(path: &Path) -> Result<ResolvedImportSheet> {
         .extension()
         .and_then(|value| value.to_str())
         .map(|value| value.to_ascii_lowercase())
-        .ok_or_else(|| anyhow::anyhow!("Import source has no file extension: {}", path.display()))?;
+        .ok_or_else(|| {
+            anyhow::anyhow!("Import source has no file extension: {}", path.display())
+        })?;
 
     if SUPPORTED_SOURCE_EXTENSIONS.contains(&extension.as_str()) {
         return Ok(ResolvedImportSheet {
@@ -359,9 +380,12 @@ fn extract_idle_strip(
     );
 
     let idle_strip = image.crop_imm(0, 0, required_width, frame_height);
-    idle_strip
-        .save(output_path)
-        .with_context(|| format!("Failed to save imported idle strip: {}", output_path.display()))?;
+    idle_strip.save(output_path).with_context(|| {
+        format!(
+            "Failed to save imported idle strip: {}",
+            output_path.display()
+        )
+    })?;
 
     Ok(())
 }
@@ -400,7 +424,11 @@ fn export_raw_aseprite_sheet(path: &Path) -> Result<ResolvedImportSheet> {
         } else {
             stderr
         };
-        anyhow::bail!("Aseprite CLI failed to export '{}': {}", path.display(), detail);
+        anyhow::bail!(
+            "Aseprite CLI failed to export '{}': {}",
+            path.display(),
+            detail
+        );
     }
 
     if !sheet_path.exists() {
@@ -422,7 +450,8 @@ fn export_raw_aseprite_sheet(path: &Path) -> Result<ResolvedImportSheet> {
         }
 
         let detail = if combined.is_empty() {
-            "Aseprite CLI exited successfully but did not write the expected sheet image.".to_string()
+            "Aseprite CLI exited successfully but did not write the expected sheet image."
+                .to_string()
         } else {
             combined
         };
@@ -565,7 +594,8 @@ fn extract_tagged_animations(
                 frame_width,
                 frame_height
             );
-            let cropped = sheet.crop_imm(frame.frame.x, frame.frame.y, frame.frame.w, frame.frame.h);
+            let cropped =
+                sheet.crop_imm(frame.frame.x, frame.frame.y, frame.frame.w, frame.frame.h);
             image::imageops::replace(
                 &mut strip,
                 &cropped.to_rgba8(),
@@ -657,7 +687,10 @@ mod tests {
         let manifest = GhostManifest::load_and_validate(&target)?;
         assert_eq!(manifest.ghost.name, "demo");
         assert_eq!(manifest.sprite.animations.len(), 1);
-        assert_eq!(manifest.provenance.unwrap().artist.as_deref(), Some("Artist"));
+        assert_eq!(
+            manifest.provenance.unwrap().artist.as_deref(),
+            Some("Artist")
+        );
         assert!(target.join("resources/animations/idle.png").exists());
 
         Ok(())

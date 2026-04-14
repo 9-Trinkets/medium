@@ -51,9 +51,8 @@ pub fn get_ghost_list() -> anyhow::Result<GhostList> {
                         entry.ok().and_then(|e| {
                             let path = e.path();
                             if path.is_dir() {
-                                path.file_name().and_then(|name| {
-                                    name.to_str().map(|s| s.to_string())
-                                })
+                                path.file_name()
+                                    .and_then(|name| name.to_str().map(|s| s.to_string()))
                             } else {
                                 None
                             }
@@ -89,13 +88,29 @@ fn move_window(x: i32, y: i32, window: tauri::Window) {
 
 #[tauri::command]
 fn sync_bubble(ghost_name: String, main_x: i32, main_y: i32, app_handle: tauri::AppHandle) {
+    const DEFAULT_BUBBLE_VERTICAL_OFFSET: i32 = 24;
+
     let bubble_label = format!("bubble-{ghost_name}");
     let sprite_label = format!("ghost-{ghost_name}");
     if let Some(bubble) = app_handle.get_webview_window(&bubble_label) {
         if let Some(main_win) = app_handle.get_webview_window(&sprite_label) {
             if let (Ok(main_size), Ok(bubble_size)) = (main_win.outer_size(), bubble.outer_size()) {
                 let offset_x = (main_size.width as i32 - bubble_size.width as i32) / 2;
-                let target_y = main_y - bubble_size.height as i32;
+
+                // Try to load the ghost manifest to get the balloon offset
+                let mut balloon_offset = 0i32;
+                if let Ok(ghosts_dir) = config::ghosts_dir() {
+                    let ghost_path = ghosts_dir.join(&ghost_name);
+                    if let Ok(manifest) = manifest::GhostManifest::load_and_validate(&ghost_path) {
+                        if let Some(offset) = manifest.sprite.balloon_offset_y {
+                            balloon_offset = offset;
+                        }
+                    }
+                }
+
+                let target_y = main_y - bubble_size.height as i32
+                    + balloon_offset
+                    + DEFAULT_BUBBLE_VERTICAL_OFFSET;
 
                 let _ = bubble.set_position(tauri::PhysicalPosition {
                     x: main_x + offset_x,
@@ -122,10 +137,10 @@ fn get_preview_ghost_path() -> Option<String> {
 
 #[tauri::command]
 fn load_ghost_from_path(ghost_path: String) -> Result<serde_json::Value, String> {
-    use std::fs;
-    use std::path::Path;
     use base64::Engine;
     use image::GenericImageView;
+    use std::fs;
+    use std::path::Path;
 
     let path = Path::new(&ghost_path);
     let manifest = crate::manifest::GhostManifest::load_and_validate(path)
@@ -180,12 +195,15 @@ fn load_ghost_from_path(ghost_path: String) -> Result<serde_json::Value, String>
 #[tauri::command]
 fn load_ghost_from_name(ghost_name: String) -> Result<serde_json::Value, String> {
     // Try to load from configured ghosts directory
-    let ghosts_dir = config::ghosts_dir()
-        .map_err(|e| format!("Failed to get ghosts directory: {}", e))?;
+    let ghosts_dir =
+        config::ghosts_dir().map_err(|e| format!("Failed to get ghosts directory: {}", e))?;
 
     let ghost_path = ghosts_dir.join(&ghost_name);
     if !ghost_path.exists() {
-        return Err(format!("Ghost '{}' not found in ghosts directory", ghost_name));
+        return Err(format!(
+            "Ghost '{}' not found in ghosts directory",
+            ghost_name
+        ));
     }
 
     load_ghost_from_path(ghost_path.to_string_lossy().to_string())

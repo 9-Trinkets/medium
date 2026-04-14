@@ -1,0 +1,5 @@
+[ghosts]
+# path = "/absolute/path/to/ghosts"
+
+[integration]
+default_ghost = "vita"

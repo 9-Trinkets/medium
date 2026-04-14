@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "medium": {
+      "type": "stdio",
+      "command": "medium",
+      "args": ["mcp", "--ghost", "vita"]
+    }
+  }
+}

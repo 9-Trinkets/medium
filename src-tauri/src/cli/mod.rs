@@ -1,6 +1,8 @@
+pub mod config_cmd;
 pub mod daemon;
 pub mod doctor;
 pub mod import;
+pub mod integrate;
 pub mod init;
 pub mod list;
 pub mod logs;

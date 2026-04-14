@@ -55,6 +55,8 @@ pub struct SpriteSection {
     pub flip_horizontal: bool,
     pub animations: Vec<AnimationConfig>,
     pub initial_animation: Option<String>,
+    #[serde(default)]
+    pub balloon_offset_y: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -108,13 +110,24 @@ impl GhostManifest {
                 errors.push("provenance.source_type must not be empty.".to_string());
             }
             validate_optional_metadata_field("provenance.source", &provenance.source, &mut errors);
-            validate_optional_metadata_field("provenance.source_file", &provenance.source_file, &mut errors);
+            validate_optional_metadata_field(
+                "provenance.source_file",
+                &provenance.source_file,
+                &mut errors,
+            );
             validate_optional_metadata_field("provenance.artist", &provenance.artist, &mut errors);
-            validate_optional_metadata_field("provenance.attribution", &provenance.attribution, &mut errors);
-            validate_optional_metadata_field("provenance.license", &provenance.license, &mut errors);
+            validate_optional_metadata_field(
+                "provenance.attribution",
+                &provenance.attribution,
+                &mut errors,
+            );
+            validate_optional_metadata_field(
+                "provenance.license",
+                &provenance.license,
+                &mut errors,
+            );
             validate_optional_metadata_field("provenance.notes", &provenance.notes, &mut errors);
         }
-
 
         if self.sprite.frame_width == 0 {
             errors.push("sprite.frame_width must be greater than 0.".to_string());
@@ -276,7 +289,11 @@ fn validate_animation_asset(base_path: &Path, animation: &AnimationConfig) -> Ve
     errors
 }
 
-fn validate_optional_metadata_field(field_name: &str, value: &Option<String>, errors: &mut Vec<String>) {
+fn validate_optional_metadata_field(
+    field_name: &str,
+    value: &Option<String>,
+    errors: &mut Vec<String>,
+) {
     if value
         .as_deref()
         .is_some_and(|inner| inner.trim().is_empty())
@@ -424,7 +441,11 @@ intent = "Run."
 
         let err = GhostManifest::load_and_validate(tmp.path()).unwrap_err();
         let error_text = err.to_string();
-        assert!(error_text.contains("ghost.name must not be empty"), "Error was: {}", error_text);
+        assert!(
+            error_text.contains("ghost.name must not be empty"),
+            "Error was: {}",
+            error_text
+        );
         assert!(error_text.contains("ghost.description must not be empty"));
         assert!(error_text.contains("sprite.frame_width must be greater than 0"));
         assert!(error_text.contains("sprite.frame_height must be greater than 0"));

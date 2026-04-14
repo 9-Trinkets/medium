@@ -19,7 +19,10 @@ pub fn run(path: &str) -> Result<()> {
     let ghost_name = manifest.ghost.name.clone();
 
     // Pass the custom ghost path to the daemon via environment variable
-    std::env::set_var("MEDIUM_PREVIEW_GHOST_PATH", custom_ghost_path.to_string_lossy().to_string());
+    std::env::set_var(
+        "MEDIUM_PREVIEW_GHOST_PATH",
+        custom_ghost_path.to_string_lossy().to_string(),
+    );
 
     println!("Starting Medium daemon with '{}' ghost...", ghost_name);
     println!("(Press Ctrl+C to stop)\n");

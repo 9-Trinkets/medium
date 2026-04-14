@@ -1,6 +1,6 @@
 # Medium
 
-Medium is a local desktop runtime for ghost avatars. It combines a Tauri daemon, an MCP bridge, a manifest-driven ghost format, and a small toolchain for validating and importing ghost assets.
+Medium is a local desktop runtime for sprite-based ghost avatars. It combines a Tauri daemon, an MCP bridge, a manifest-driven ghost format, and a small toolchain for validating and importing ghost assets.
 
 ## What it provides
 
@@ -8,7 +8,7 @@ Medium is a local desktop runtime for ghost avatars. It combines a Tauri daemon,
 - speech bubbles, animation control, and optional TTS
 - a local daemon plus IPC socket
 - an MCP bridge for agent control
-- ghost validation, preview, and import commands
+- ghost validation, preview, and sprite import commands
 
 ## Default ghost credit
 
@@ -56,7 +56,7 @@ medium/
     assets/ghosts/     Bundled ghost folders and ghost.toml manifests
   src-tauri/           Rust daemon, CLI, IPC, MCP bridge, validation logic
   scripts/             Developer helper scripts
-  CONTROL_MEDIUM_SKILL.md
+  skills/medium-rituals/
 ```
 
 ## Core commands
@@ -65,6 +65,13 @@ medium/
 medium daemon
 medium mcp --ghost vita
 medium init
+medium config path
+medium config get integration.default_ghost
+medium config set integration.default_ghost vita
+medium integrate claude
+medium integrate claude --global
+medium integrate copilot
+medium integrate copilot --global
 medium doctor
 medium status
 medium logs --lines 100
@@ -108,6 +115,40 @@ Medium commonly uses:
 - default socket: `/tmp/medium_ghost_default_cmd.sock`
 - local ghost library: `~/.medium/ghosts`
 - Claude MCP config: `~/.claude/.mcp.json`
+- Copilot global MCP config: `~/.copilot/mcp-config.json`
+- Copilot workspace MCP config: `.vscode/mcp.json`
+
+## Integration workflow
+
+Use `medium init` for the quick path. It ensures `~/.medium/config.toml` exists and writes a
+project-local Claude MCP entry in `.mcp.json`.
+
+Use `medium integrate` when a specific target is needed:
+
+```bash
+medium integrate claude
+medium integrate claude --global
+medium integrate copilot
+medium integrate copilot --global
+```
+
+Use `medium config` to inspect or change Medium's config source:
+
+```bash
+medium config path
+medium config get
+medium config get integration.default_ghost
+medium config set integration.default_ghost vita
+```
+
+Reusable examples live in:
+
+- `docs/ghost-authoring.md`
+- `templates/medium.config.toml`
+- `templates/claude-project.mcp.json`
+- `templates/copilot-workspace.mcp.json`
+- `templates/copilot-global.mcp-config.json`
+- `skills/medium-rituals/`
 
 ## Ghost manifest
 

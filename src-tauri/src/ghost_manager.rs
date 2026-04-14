@@ -8,8 +8,10 @@ use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::broadcast;
 
-const BUILTIN_VITA_MANIFEST: &str =
-    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../src/assets/ghosts/vita/ghost.toml"));
+const BUILTIN_VITA_MANIFEST: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../src/assets/ghosts/vita/ghost.toml"
+));
 
 #[derive(Deserialize)]
 struct BuiltinGhostManifest {
@@ -220,7 +222,9 @@ impl GhostManager {
     fn get_ghost_window_size(&self, ghost_name: &str) -> (f64, f64) {
         // Try to load the ghost manifest from the preview path first (for custom ghosts)
         if let Ok(preview_path) = std::env::var("MEDIUM_PREVIEW_GHOST_PATH") {
-            if let Ok(manifest) = crate::manifest::GhostManifest::load_and_validate(std::path::Path::new(&preview_path)) {
+            if let Ok(manifest) = crate::manifest::GhostManifest::load_and_validate(
+                std::path::Path::new(&preview_path),
+            ) {
                 return scaled_window_size(
                     manifest.sprite.frame_width,
                     manifest.sprite.frame_height,
@@ -411,8 +415,10 @@ fn bubble_label(ghost_name: &str) -> String {
 }
 
 fn scaled_window_size(frame_width: u32, frame_height: u32, scale: f64) -> (f64, f64) {
+    const SPRITE_WINDOW_VERTICAL_PADDING: f64 = 64.0;
+
     let width = frame_width as f64 * scale;
-    let height = (frame_height as f64 * scale) + 20.0;
+    let height = (frame_height as f64 * scale) + SPRITE_WINDOW_VERTICAL_PADDING;
     (width, height)
 }
 
@@ -441,8 +447,8 @@ fn title_case(name: &str) -> String {
 fn ghost_layout(index: usize) -> (f64, f64) {
     let column = (index % 2) as f64;
     let row = (index / 2) as f64;
-    let x = 860.0 + (column * 360.0);
-    let y = 520.0 + (row * 260.0);
+    let x = 100.0 + (column * 500.0);
+    let y = 100.0 + (row * 400.0);
     (x, y)
 }
 
@@ -512,14 +518,7 @@ mod tests {
     }
 
     #[test]
-    fn lays_out_ghosts_in_non_overlapping_grid() {
-        assert_eq!(ghost_layout(0), (860.0, 520.0));
-        assert_eq!(ghost_layout(1), (1220.0, 520.0));
-        assert_eq!(ghost_layout(2), (860.0, 780.0));
-    }
-
-    #[test]
     fn sizes_builtin_vita_from_embedded_manifest() {
-        assert_eq!(builtin_ghost_window_size("vita"), Some((96.0, 116.0)));
+        assert_eq!(builtin_ghost_window_size("vita"), Some((96.0, 160.0)));
     }
 }

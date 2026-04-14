@@ -29,6 +29,20 @@ enum Commands {
     },
     /// Initialize Medium and configure agent CLIs
     Init,
+    /// Read or update Medium's source configuration
+    #[command(subcommand)]
+    Config(cli::config_cmd::ConfigCommand),
+    /// Generate MCP integration files for supported tools
+    Integrate {
+        #[arg(value_enum)]
+        tool: cli::integrate::IntegrationTool,
+        #[arg(long, conflicts_with = "project")]
+        global: bool,
+        #[arg(long)]
+        project: bool,
+        #[arg(long)]
+        ghost: Option<String>,
+    },
     /// View the latest logs from the background daemon
     Logs {
         #[arg(short, long, default_value = "100")]
@@ -97,6 +111,23 @@ async fn main() -> Result<()> {
             cli::init::run()?;
             Ok(())
         }
+        Commands::Config(command) => cli::config_cmd::run(command),
+        Commands::Integrate {
+            tool,
+            global,
+            project: _,
+            ghost,
+        } => {
+            let cwd = std::env::current_dir()?;
+            let scope = if global {
+                cli::integrate::IntegrationScope::Global
+            } else {
+                cli::integrate::IntegrationScope::Project
+            };
+            let path = cli::integrate::run(tool, scope, ghost.as_deref(), &cwd)?;
+            println!("✅ Wrote {} integration to {}", tool_name(tool), path.display());
+            Ok(())
+        }
         Commands::Logs {
             lines,
             filter,
@@ -107,11 +138,16 @@ async fn main() -> Result<()> {
         Commands::Ghosts(cmd) => match cmd {
             GhostsCommands::Scaffold { name, path } => cli::scaffold::run(&name, path.as_deref()),
             GhostsCommands::Validate { path } => cli::validate::run(&path).await,
-            GhostsCommands::Preview { path } => {
-                cli::preview::run(&path)
-            }
+            GhostsCommands::Preview { path } => cli::preview::run(&path),
             GhostsCommands::Import { importer } => cli::import::run(importer),
             GhostsCommands::List => cli::list::run(),
         },
+    }
+}
+
+fn tool_name(tool: cli::integrate::IntegrationTool) -> &'static str {
+    match tool {
+        cli::integrate::IntegrationTool::Claude => "Claude",
+        cli::integrate::IntegrationTool::Copilot => "Copilot",
     }
 }

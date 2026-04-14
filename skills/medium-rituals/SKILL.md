@@ -1,11 +1,14 @@
 ---
-name: control-medium
-description: This skill should be used when the user asks to control Medium ghosts, "summon" a ghost, make a ghost "speak", play a ghost animation, set ghost facing, or use a specific ghost like "vita" or a custom imported ghost.
+name: medium-rituals
+description: This skill should be used when the user asks to control Medium ghosts, "summon" a ghost, make a ghost "speak", play a ghost animation, set ghost facing, dismiss a ghost, or use a specific ghost like "vita" or a custom imported ghost.
 ---
 
-# Control Medium via MCP Tools
+# Run Medium rituals via MCP tools
 
 Use Medium tools to make ghost interactions feel intentional, readable, and lightweight.
+
+Keep the focus on embodiment, not raw command dispatch. Treat summon, speech, animation, and
+facing as a small performance grammar for visible agent presence.
 
 Keep the skill focused on runtime behavior:
 - Speak early.
@@ -13,7 +16,22 @@ Keep the skill focused on runtime behavior:
 - Use `ghost=` to target the right persona.
 - Keep spoken lines short and natural.
 
-## Core Working Rules
+## Setup expectations
+
+Expect Medium to be installed locally and reachable through MCP.
+
+Prefer the built-in integration commands when setup is missing:
+
+```bash
+medium init
+medium integrate claude
+medium integrate copilot
+medium doctor
+```
+
+Use `medium integrate ... --ghost <name>` when a repo should default to a specific ghost.
+
+## Core working rules
 
 ```gherkin
 Feature: Voice Communication
@@ -108,7 +126,7 @@ Feature: Multi-Ghost Control
       And I do not need to insert artificial delays
 ```
 
-## Quick Patterns
+## Quick patterns
 
 ```python
 summon("vita")
@@ -127,10 +145,17 @@ set_facing("left", ghost="vita")
 speak("Done.", ghost="vita", voice=False)
 ```
 
-## Available MCP Tools
+## Available MCP tools
 
 - `summon(name)`
 - `dismiss(name)`
 - `play_animation(name, loop_anim=False, ghost=None)`
 - `set_facing(direction, ghost=None)`
 - `speak(text, ghost=None, personality=None, voice=None)`
+
+## Additional resources
+
+Consult these files when installation details or richer usage patterns are needed:
+
+- `references/install.md` - Claude and Copilot setup flows
+- `references/patterns.md` - practical interaction patterns and phrasing guidance

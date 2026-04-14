@@ -9,6 +9,7 @@ pub const MEDIUM_CONFIG_ENV: &str = "MEDIUM_CONFIG";
 pub struct GlobalConfig {
     pub tts: Option<GlobalTtsConfig>,
     pub ghosts: Option<GhostsConfig>,
+    pub integration: Option<IntegrationConfig>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -22,6 +23,11 @@ pub struct GlobalTtsConfig {
     pub openai_api_key: Option<String>,
     pub elevenlabs_api_key: Option<String>,
     pub elevenlabs_voice_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct IntegrationConfig {
+    pub default_ghost: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -119,11 +125,56 @@ pub fn global_claude_mcp_path() -> Result<PathBuf> {
     Ok(home_dir()?.join(".claude").join(".mcp.json"))
 }
 
+pub fn global_copilot_mcp_path() -> Result<PathBuf> {
+    Ok(home_dir()?.join(".copilot").join("mcp-config.json"))
+}
+
 pub fn find_nearest_project_mcp_path(start_dir: &Path) -> Option<PathBuf> {
     start_dir
         .ancestors()
         .map(|dir| dir.join(".mcp.json"))
         .find(|path| path.exists())
+}
+
+pub fn find_nearest_project_copilot_mcp_path(start_dir: &Path) -> Option<PathBuf> {
+    start_dir
+        .ancestors()
+        .map(|dir| dir.join(".vscode").join("mcp.json"))
+        .find(|path| path.exists())
+}
+
+pub fn configured_default_ghost() -> Result<String> {
+    let default = load_global_config()?
+        .and_then(|config| config.integration)
+        .and_then(|integration| integration.default_ghost)
+        .map(|ghost| ghost.trim().to_string())
+        .filter(|ghost| !ghost.is_empty())
+        .unwrap_or_else(|| "vita".to_string());
+    Ok(default)
+}
+
+pub fn ensure_default_config_exists() -> Result<PathBuf> {
+    let resolved = resolve_config_path()?;
+    if resolved.path.exists() {
+        return Ok(resolved.path);
+    }
+
+    if let Some(parent) = resolved.path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    fs::write(
+        &resolved.path,
+        r#"[ghosts]
+# path = "/absolute/path/to/ghosts"
+
+[integration]
+default_ghost = "vita"
+"#,
+    )
+    .with_context(|| format!("Failed to write default config at {:?}", resolved.path))?;
+
+    Ok(resolved.path)
 }
 
 fn has_non_empty_value(value: &Option<String>) -> bool {
@@ -175,5 +226,4 @@ openai_api_key = "test-key"
         assert!(!tts.has_elevenlabs_api_key());
         Ok(())
     }
-
 }

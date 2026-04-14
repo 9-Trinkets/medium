@@ -44,4 +44,3 @@ image = "0.25"
 
 [dev-dependencies]
 tempfile = "3.27.0"
-

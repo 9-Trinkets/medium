@@ -3,7 +3,8 @@ use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use tauri_app_lib::config::{
-    find_nearest_project_mcp_path, global_claude_mcp_path, load_global_config, log_file_path,
+    configured_default_ghost, find_nearest_project_copilot_mcp_path, find_nearest_project_mcp_path,
+    global_claude_mcp_path, global_copilot_mcp_path, load_global_config, log_file_path,
     resolve_config_path,
 };
 use tauri_app_lib::ipc::{get_socket_paths, DEFAULT_DAEMON_INSTANCE};
@@ -17,6 +18,8 @@ pub async fn run() -> Result<()> {
     let cwd = std::env::current_dir().context("Could not resolve current working directory")?;
     let global_mcp_path = global_claude_mcp_path()?;
     let project_mcp_path = find_nearest_project_mcp_path(&cwd);
+    let global_copilot_mcp_path = global_copilot_mcp_path()?;
+    let project_copilot_mcp_path = find_nearest_project_copilot_mcp_path(&cwd);
     let (cmd_socket, _) = get_socket_paths(DEFAULT_DAEMON_INSTANCE);
 
     let mut issues_found = false;
@@ -59,6 +62,7 @@ pub async fn run() -> Result<()> {
                     issues_found = true;
                 }
             }
+            println!("ℹ️  Default ghost: {}", configured_default_ghost()?);
         }
         Ok(None) => {
             println!("⚠️  Config file is missing.");
@@ -116,6 +120,51 @@ pub async fn run() -> Result<()> {
         );
     }
 
+    match inspect_mcp_config(&global_copilot_mcp_path)? {
+        McpStatus::Configured => println!(
+            "✅ Copilot global MCP config includes a medium server: {:?}",
+            global_copilot_mcp_path
+        ),
+        McpStatus::Missing => println!(
+            "ℹ️  Copilot global MCP config not found: {:?}",
+            global_copilot_mcp_path
+        ),
+        McpStatus::NoMediumServer => println!(
+            "⚠️  Copilot global MCP config exists but has no medium server: {:?}",
+            global_copilot_mcp_path
+        ),
+        McpStatus::Invalid(reason) => {
+            println!(
+                "❌ Copilot global MCP config is invalid at {:?}: {}",
+                global_copilot_mcp_path, reason
+            );
+            issues_found = true;
+        }
+    }
+
+    if let Some(project_copilot_mcp_path) = project_copilot_mcp_path {
+        match inspect_mcp_config(&project_copilot_mcp_path)? {
+            McpStatus::Configured => println!(
+                "✅ Copilot workspace MCP config includes a medium server: {:?}",
+                project_copilot_mcp_path
+            ),
+            McpStatus::Missing => {}
+            McpStatus::NoMediumServer => println!(
+                "⚠️  Copilot workspace MCP config exists but has no medium server: {:?}",
+                project_copilot_mcp_path
+            ),
+            McpStatus::Invalid(reason) => println!(
+                "❌ Copilot workspace MCP config is invalid at {:?}: {}",
+                project_copilot_mcp_path, reason
+            ),
+        }
+    } else {
+        println!(
+            "ℹ️  No project-local .vscode/mcp.json found from {:?} upward.",
+            cwd
+        );
+    }
+
     println!("\nDaemon");
     if !cmd_socket.exists() {
         println!("⚠️  Daemon socket is missing. The daemon appears to be stopped.");
@@ -167,6 +216,7 @@ fn inspect_mcp_config(path: &Path) -> Result<McpStatus> {
 
     let has_medium = parsed
         .get("mcpServers")
+        .or_else(|| parsed.get("servers"))
         .and_then(Value::as_object)
         .is_some_and(|servers| servers.contains_key("medium"));
 

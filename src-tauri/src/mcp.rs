@@ -1,11 +1,12 @@
-use crate::ipc::{DEFAULT_DAEMON_INSTANCE, get_socket_paths};
+use crate::ipc::{get_socket_paths, DEFAULT_DAEMON_INSTANCE};
 use crate::protocol::{Command, RoutedCommand};
 use anyhow::{Context, Result};
 use futures_util::SinkExt;
 use rmcp::{
     model::{
-        CallToolRequestParams, CallToolResult, Content, ErrorCode, ListToolsResult, PaginatedRequestParams,
-        ServerInfo, Tool, Implementation, InitializeResult, ServerCapabilities,
+        CallToolRequestParams, CallToolResult, Content, ErrorCode, Implementation,
+        InitializeResult, ListToolsResult, PaginatedRequestParams, ServerCapabilities, ServerInfo,
+        Tool,
     },
     service::{MaybeSendFuture, RequestContext, RoleServer},
     ErrorData as McpError, ServerHandler, ServiceExt,
@@ -88,8 +89,7 @@ impl ServerHandler for MediumMcpServer {
     fn get_info(&self) -> ServerInfo {
         let mut capabilities = ServerCapabilities::default();
         capabilities.tools = Some(Default::default());
-        InitializeResult::new(capabilities)
-            .with_server_info(Implementation::new("medium", "0.1.0"))
+        InitializeResult::new(capabilities).with_server_info(Implementation::new("medium", "0.1.0"))
     }
 
     fn list_tools(
@@ -146,12 +146,15 @@ impl ServerHandler for MediumMcpServer {
                     let args: SummonArgs = serde_json::from_value(arguments).map_err(|e| {
                         McpError::invalid_params(format!("Invalid arguments: {}", e), None)
                     })?;
-                    send_command(&args.name, Command::SwitchGhost { name: args.name.clone() })
-                        .await
-                        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-                    Ok(CallToolResult::success(vec![Content::text(
-                        "Summoning...",
-                    )]))
+                    send_command(
+                        &args.name,
+                        Command::SwitchGhost {
+                            name: args.name.clone(),
+                        },
+                    )
+                    .await
+                    .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+                    Ok(CallToolResult::success(vec![Content::text("Summoning...")]))
                 }
                 "dismiss" => {
                     let args: DismissArgs = serde_json::from_value(arguments).map_err(|e| {
@@ -160,7 +163,9 @@ impl ServerHandler for MediumMcpServer {
                     send_command(&args.name, Command::Close)
                         .await
                         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-                    Ok(CallToolResult::success(vec![Content::text("Dismissing...")]))
+                    Ok(CallToolResult::success(vec![Content::text(
+                        "Dismissing...",
+                    )]))
                 }
                 "speak" => {
                     let args: SpeakArgs = serde_json::from_value(arguments).map_err(|e| {
@@ -180,9 +185,10 @@ impl ServerHandler for MediumMcpServer {
                     Ok(CallToolResult::success(vec![Content::text("Speaking...")]))
                 }
                 "play_animation" => {
-                    let args: PlayAnimationArgs = serde_json::from_value(arguments).map_err(|e| {
-                        McpError::invalid_params(format!("Invalid arguments: {}", e), None)
-                    })?;
+                    let args: PlayAnimationArgs =
+                        serde_json::from_value(arguments).map_err(|e| {
+                            McpError::invalid_params(format!("Invalid arguments: {}", e), None)
+                        })?;
                     let ghost = args.ghost.as_deref().unwrap_or(&default_ghost);
                     send_command(
                         ghost,
@@ -253,7 +259,9 @@ async fn send_command(ghost_name: &str, cmd: Command) -> Result<String> {
 mod tests {
     use super::*;
     use futures::StreamExt;
-    use rmcp::model::{JsonRpcRequest, JsonRpcNotification, Request, NumberOrString, ClientCapabilities};
+    use rmcp::model::{
+        ClientCapabilities, JsonRpcNotification, JsonRpcRequest, NumberOrString, Request,
+    };
     use rmcp::service::RxJsonRpcMessage;
     use serde_json::json;
     use std::sync::{Mutex, OnceLock};
@@ -289,7 +297,7 @@ mod tests {
         // 1. Send Initialize
         let init_params = rmcp::model::InitializeRequestParams::new(
             ClientCapabilities::default(),
-            Implementation::new("test", "0.1.0")
+            Implementation::new("test", "0.1.0"),
         );
         let init_req = RxJsonRpcMessage::<RoleServer>::Request(JsonRpcRequest::new(
             NumberOrString::Number(1),
@@ -303,7 +311,9 @@ mod tests {
         // 2. Send Initialized notification
         let initialized_notif = RxJsonRpcMessage::<RoleServer>::Notification(JsonRpcNotification {
             jsonrpc: Default::default(),
-            notification: rmcp::model::ClientNotification::InitializedNotification(Default::default())
+            notification: rmcp::model::ClientNotification::InitializedNotification(
+                Default::default(),
+            ),
         });
         tx.send(initialized_notif).await.unwrap();
 
@@ -320,7 +330,8 @@ mod tests {
         tx.send(request).await.unwrap();
 
         // Verify IPC command
-        let (stream, _) = tokio::time::timeout(tokio::time::Duration::from_secs(2), listener.accept()).await??;
+        let (stream, _) =
+            tokio::time::timeout(tokio::time::Duration::from_secs(2), listener.accept()).await??;
         let mut framed = Framed::new(stream, LinesCodec::new());
         let line = framed.next().await.context("No data on IPC stream")??;
 
@@ -355,7 +366,7 @@ mod tests {
 
         let init_params = rmcp::model::InitializeRequestParams::new(
             ClientCapabilities::default(),
-            Implementation::new("test", "0.1.0")
+            Implementation::new("test", "0.1.0"),
         );
         let init_req = RxJsonRpcMessage::<RoleServer>::Request(JsonRpcRequest::new(
             NumberOrString::Number(1),
@@ -366,7 +377,9 @@ mod tests {
 
         let initialized_notif = RxJsonRpcMessage::<RoleServer>::Notification(JsonRpcNotification {
             jsonrpc: Default::default(),
-            notification: rmcp::model::ClientNotification::InitializedNotification(Default::default())
+            notification: rmcp::model::ClientNotification::InitializedNotification(
+                Default::default(),
+            ),
         });
         tx.send(initialized_notif).await.unwrap();
 
@@ -383,14 +396,19 @@ mod tests {
         ));
         tx.send(request).await.unwrap();
 
-        let (stream, _) = tokio::time::timeout(tokio::time::Duration::from_secs(2), listener.accept()).await??;
+        let (stream, _) =
+            tokio::time::timeout(tokio::time::Duration::from_secs(2), listener.accept()).await??;
         let mut framed = Framed::new(stream, LinesCodec::new());
         let line = framed.next().await.context("No data on IPC stream")??;
 
         let cmd: RoutedCommand = serde_json::from_str(&line)?;
         assert_eq!(cmd.ghost, "archer");
         match cmd.command {
-            Command::Speak { text, personality, voice } => {
+            Command::Speak {
+                text,
+                personality,
+                voice,
+            } => {
                 assert_eq!(text, "Quiet bubble only");
                 assert_eq!(personality, None);
                 assert_eq!(voice, Some(false));
@@ -400,5 +418,4 @@ mod tests {
 
         Ok(())
     }
-
 }
