@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medium — AI Agents with Soul</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Lora:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Lora', serif;
+      color: #1a1a1a;
+      background-color: #fafaf9;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 2rem 1rem;
+      border-bottom: 1px solid #e5e5e4;
+      background: white;
+    }
+
+    .header-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo img {
+      height: 40px;
+      width: 40px;
+    }
+
+    .logo-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    nav a {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin-left: 2rem;
+      text-decoration: none;
+      color: #666;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: #1a1a1a;
+    }
+
+    .hero {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 4rem 1rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: #666;
+      margin-bottom: 2rem;
+      font-style: italic;
+    }
+
+    .features {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 4rem;
+    }
+
+    .feature {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      border: 1px solid #e5e5e4;
+    }
+
+    .feature h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .feature p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .cta-group {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .cta-button {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 0.75rem 2rem;
+      margin: 0.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .cta-primary {
+      background: #1a1a1a;
+      color: white;
+    }
+
+    .cta-primary:hover {
+      background: #333;
+      transform: translateY(-2px);
+    }
+
+    .cta-secondary {
+      background: white;
+      color: #1a1a1a;
+      border: 1px solid #1a1a1a;
+    }
+
+    .cta-secondary:hover {
+      background: #f5f5f5;
+      transform: translateY(-2px);
+    }
+
+    .demo {
+      max-width: 1000px;
+      margin: 4rem auto 0;
+      padding: 3rem 1rem;
+      background: white;
+      border-top: 1px solid #e5e5e4;
+    }
+
+    .demo h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .demo-video {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto 1rem;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f5;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+    }
+
+    .demo-video video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .demo-credit {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 1rem;
+    }
+
+    .quickstart {
+      max-width: 1000px;
+      margin: 4rem auto;
+      padding: 3rem 1rem;
+      background: white;
+      border: 1px solid #e5e5e4;
+      border-radius: 8px;
+    }
+
+    .quickstart h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .code-block {
+      background: #1a1a1a;
+      color: #e5e5e4;
+      padding: 1rem;
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #999;
+      font-size: 0.9rem;
+      border-top: 1px solid #e5e5e4;
+    }
+
+    .github-link {
+      color: #666;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .github-link:hover {
+      color: #1a1a1a;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      nav {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <img src="icon.png" alt="Medium" />
+        <span class="logo-text">Medium</span>
+      </div>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="https://github.com/9-Trinkets/medium">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>AI Agents with Ghost</h1>
+      <p class="hero-subtitle">Give your AI tools animated avatars that feel alive.</p>
+
+      <div class="cta-group">
+        <a href="https://github.com/9-Trinkets/medium/blob/main/README.md" class="cta-button cta-primary">Get Started</a>
+        <a href="https://github.com/9-Trinkets/medium" class="cta-button cta-secondary">View on GitHub</a>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="feature">
+        <h3>🤖 Agent-Driven</h3>
+        <p>Control animated ghosts via MCP. Your Claude, Copilot, or custom agent can speak, gesture, and feel present. No async complexity—just intentional embodiment.</p>
+      </div>
+
+      <div class="feature">
+        <h3>🎨 Aseprite Import</h3>
+        <p>Import your indie game sprites directly. Aseprite animations come alive in Medium. Perfect for developers who already have gorgeous pixel art.</p>
+      </div>
+
+      <div class="feature">
+        <h3>⚡ MCP-First</h3>
+        <p>Built on the Model Context Protocol. Medium integrates cleanly with Claude, Copilot, and other MCP-compatible tools. Control them from your agent code.</p>
+      </div>
+
+      <div class="feature">
+        <h3>✨ Lightweight & Fun</h3>
+        <p>No heavy frameworks. Medium is a small shell for sprite rendering and speech bubbles. It stays out of the way while your agent takes the stage.</p>
+      </div>
+    </section>
+
+    <section class="demo">
+      <h2>See It in Action</h2>
+      <div class="demo-video">
+        <video controls>
+          <source src="demo.mp4" type="video/mp4" />
+          Your browser doesn't support embedded videos. Check out the GitHub repo for a demo.
+        </video>
+      </div>
+      <p class="demo-credit">Demo features Vita, created by <a href="https://arks.itch.io/dino-characters" style="color: #666; text-decoration: underline;">Arks</a>.</p>
+    </section>
+
+    <section class="quickstart">
+      <h2>Quick Start</h2>
+      <p>Clone the repo and initialize Medium:</p>
+      <div class="code-block">$ npm install<br/>$ npm run build<br/>$ npm run redeploy:daemon<br/>$ medium init</div>
+      <p style="margin-top: 1.5rem; color: #666;">Then control ghosts from your Claude prompts using MCP:</p>
+      <div class="code-block">summon("vita")<br/>speak("Hello, world!")<br/>play_animation("idle", loop_anim=true)</div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Made with curiosity by <a href="https://www.9trinkets.com/" class="github-link">9 Trinkets</a> • <a href="https://github.com/9-Trinkets/medium" class="github-link">GitHub</a></p>
+  </footer>
+</body>
+</html>
