@@ -19,4 +19,29 @@ initial_animation = "idle"
 [[sprite.animations]]
 file = "resources/animations/idle.png"
 name = "idle"
-intent = "Imported idle animation from an Aseprite-style source pack."
+intent = "Idle stance animation"
+
+[[sprite.animations]]
+file = "resources/animations/move.png"
+name = "move"
+intent = "Walking/moving animation"
+
+[[sprite.animations]]
+file = "resources/animations/kick.png"
+name = "kick"
+intent = "Kicking action animation"
+
+[[sprite.animations]]
+file = "resources/animations/hurt.png"
+name = "hurt"
+intent = "Taking damage/hurt animation"
+
+[[sprite.animations]]
+file = "resources/animations/crouch.png"
+name = "crouch"
+intent = "Crouching animation"
+
+[[sprite.animations]]
+file = "resources/animations/sneak.png"
+name = "sneak"
+intent = "Sneaking/tiptoeing animation"
