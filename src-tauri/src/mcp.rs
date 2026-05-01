@@ -1,7 +1,7 @@
 use crate::ipc::{get_socket_paths, DEFAULT_DAEMON_INSTANCE};
 use crate::protocol::{Command, RoutedCommand};
 use anyhow::{Context, Result};
-use futures_util::SinkExt;
+use futures_util::{SinkExt, StreamExt};
 use rmcp::{
     model::{
         CallToolRequestParams, CallToolResult, Content, ErrorCode, Implementation,
@@ -14,6 +14,10 @@ use rmcp::{
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::future::Future;
+use std::fs::{self, OpenOptions};
+use std::path::Path;
+use std::process::{Command as StdCommand, Stdio};
+use std::time::Duration;
 use tokio::net::UnixStream;
 use tokio_util::codec::{Framed, LinesCodec};
 
@@ -27,11 +31,19 @@ impl MediumMcpServer {
     }
 
     pub async fn run(self) -> Result<()> {
+        send_command(
+            &self.default_ghost,
+            Command::SwitchGhost {
+                name: self.default_ghost.clone(),
+            },
+        )
+        .await?;
         let transport = (tokio::io::stdin(), tokio::io::stdout());
         let server = self.serve(transport).await?;
         server.waiting().await?;
         Ok(())
     }
+
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -237,7 +249,21 @@ impl ServerHandler for MediumMcpServer {
 
 async fn send_command(ghost_name: &str, cmd: Command) -> Result<String> {
     let (cmd_path, _) = get_socket_paths(DEFAULT_DAEMON_INSTANCE);
-    let stream = UnixStream::connect(&cmd_path)
+    match send_command_once(&cmd_path, ghost_name, cmd.clone()).await {
+        Ok(()) => {}
+        Err(first_error) => {
+            ensure_daemon_running().await?;
+            send_command_once(&cmd_path, ghost_name, cmd)
+                .await
+                .with_context(|| format!("Failed after daemon recovery attempt: {}", first_error))?;
+        }
+    }
+
+    Ok("Success".to_string())
+}
+
+async fn send_command_once(cmd_path: &Path, ghost_name: &str, cmd: Command) -> Result<()> {
+    let stream = UnixStream::connect(cmd_path)
         .await
         .with_context(|| format!("Could not connect to Medium daemon at {:?}", cmd_path))?;
 
@@ -247,14 +273,82 @@ async fn send_command(ghost_name: &str, cmd: Command) -> Result<String> {
         command: cmd,
     })?;
     framed.send(line).await?;
+    Ok(())
+}
 
-    Ok("Success".to_string())
+async fn daemon_socket_is_responsive(cmd_path: &Path) -> bool {
+    if !cmd_path.exists() {
+        return false;
+    }
+
+    let stream = match UnixStream::connect(cmd_path).await {
+        Ok(stream) => stream,
+        Err(_) => return false,
+    };
+
+    let mut framed = Framed::new(stream, LinesCodec::new());
+    let status = match serde_json::to_string(&RoutedCommand {
+        ghost: "default".to_string(),
+        command: Command::Status,
+    }) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+
+    if framed.send(status).await.is_err() {
+        return false;
+    }
+
+    matches!(
+        tokio::time::timeout(Duration::from_millis(800), framed.next()).await,
+        Ok(Some(Ok(_)))
+    )
+}
+
+async fn ensure_daemon_running() -> Result<()> {
+    let (cmd_path, _) = get_socket_paths(DEFAULT_DAEMON_INSTANCE);
+    if daemon_socket_is_responsive(&cmd_path).await {
+        return Ok(());
+    }
+
+    if cmd_path.exists() {
+        let _ = fs::remove_file(&cmd_path);
+    }
+
+    let exe_path = std::env::current_exe()?;
+    let log_path = crate::config::log_file_path()?;
+    if let Some(parent) = log_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let log_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+        .context("Could not open daemon log file")?;
+
+    StdCommand::new(exe_path)
+        .arg("daemon")
+        .stdout(Stdio::from(log_file.try_clone()?))
+        .stderr(Stdio::from(log_file))
+        .spawn()
+        .context("Failed to spawn Medium daemon")?;
+
+    for _ in 0..10 {
+        if daemon_socket_is_responsive(&cmd_path).await {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+
+    anyhow::bail!("Medium daemon failed to become responsive within timeout.")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use futures::StreamExt;
+    use futures_util::SinkExt;
     use rmcp::model::{
         ClientCapabilities, JsonRpcNotification, JsonRpcRequest, NumberOrString, Request,
     };
@@ -410,6 +504,49 @@ mod tests {
             _ => panic!("Expected Speak command"),
         }
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_daemon_socket_is_responsive_false_when_socket_missing() -> Result<()> {
+        let _guard = test_lock().lock().unwrap();
+        let (cmd_path, _) = get_socket_paths(DEFAULT_DAEMON_INSTANCE);
+        if cmd_path.exists() {
+            let _ = std::fs::remove_file(&cmd_path);
+        }
+
+        assert!(!daemon_socket_is_responsive(&cmd_path).await);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_daemon_socket_is_responsive_true_for_status_reply() -> Result<()> {
+        let _guard = test_lock().lock().unwrap();
+        let (cmd_path, _) = get_socket_paths(DEFAULT_DAEMON_INSTANCE);
+        if cmd_path.exists() {
+            let _ = std::fs::remove_file(&cmd_path);
+        }
+        let listener = UnixListener::bind(&cmd_path)?;
+
+        tokio::spawn(async move {
+            if let Ok((stream, _)) = listener.accept().await {
+                let mut framed = Framed::new(stream, LinesCodec::new());
+                if let Some(Ok(_line)) = framed.next().await {
+                    let _ = framed
+                        .send(
+                            serde_json::json!({
+                                "type": "status",
+                                "active_ghost": "vita",
+                                "known_ghosts": ["vita"]
+                            })
+                            .to_string(),
+                        )
+                        .await;
+                }
+            }
+        });
+
+        assert!(daemon_socket_is_responsive(&cmd_path).await);
         Ok(())
     }
 }

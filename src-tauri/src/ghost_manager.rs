@@ -296,7 +296,8 @@ impl GhostManager {
         }
 
         if self.known_ghosts.is_empty() {
-            let _ = app_handle.exit(0);
+            // Keep the daemon alive even when no ghosts are active so agents can
+            // summon new ghosts later without restarting Medium.
             return;
         }
 
